@@ -1,90 +1,90 @@
-# YouTube Stats — интеграция для Home Assistant
+# YouTube Stats — Home Assistant integration
 
-Кастомный компонент (распространяется через HACS в виде custom repository),
-который через **YouTube Data API v3** и **OAuth2** подтягивает данные о
-последнем опубликованном видео или Shorts на вашем собственном канале и
-показывает их через entity `sensor.<канал>_latest_upload`:
+A custom component (distributed via HACS as a custom repository) that uses
+the **YouTube Data API v3** and **OAuth2** to fetch data about the most
+recently published video or Short on your own channel and exposes it
+through the `sensor.<channel>_latest_upload` entity:
 
-- **Название** — состояние сенсора (title видео)
-- **Дата и время публикации** — атрибут `published_at`
-- **Количество просмотров** — атрибут `view_count`
-- **Количество комментариев** — атрибут `comment_count`
-- плюс `content_type` (`video`/`short`), `like_count`, `duration_seconds`,
+- **Title** — the sensor's state (video title)
+- **Publish date and time** — `published_at` attribute
+- **View count** — `view_count` attribute
+- **Comment count** — `comment_count` attribute
+- plus `content_type` (`video`/`short`), `like_count`, `duration_seconds`,
   `url`, `thumbnail_url`, `description`, `video_id`
 
-Тип контента (`video` или `short`) определяется эвристически по
-длительности ролика (≤ 3 минут = Shorts), так как YouTube Data API не
-отдаёт официальный флаг Shorts.
+The content type (`video` or `short`) is determined heuristically from the
+video's duration (≤ 3 minutes = Shorts), since the YouTube Data API does not
+expose an official Shorts flag.
 
-Опрашивается только **ваш собственный** канал (через `mine=true`), доступ к
-которому даёт OAuth-логин через Google. Обновление данных — раз в 15 минут
-(это ~3 квоты YouTube API за опрос, дневная квота по умолчанию — 10 000).
+Only **your own** channel is polled (via `mine=true`), granted through an
+OAuth login with Google. Data refreshes every 15 minutes (~3 YouTube API
+quota units per poll; the default daily quota is 10,000).
 
-## Как это авторизуется и где хранятся данные
+## How authentication works and where data is stored
 
-Используется **стандартный механизм Home Assistant** для OAuth2-интеграций
-(`config_entry_oauth2_flow` + платформа `application_credentials`, как у
-Google Calendar/Nest и других core-интеграций):
+This integration uses Home Assistant's **standard mechanism** for OAuth2
+integrations (`config_entry_oauth2_flow` + the `application_credentials`
+platform, the same pattern used by Google Calendar/Nest and other core
+integrations):
 
-- Client ID/Secret вашего Google-проекта регистрируются в HA через
-  **Настройки → Устройства и сервисы → Application Credentials** — они
-  хранятся в `.storage/application_credentials`.
-- После входа через Google токен доступа/обновления сохраняется прямо в
-  соответствующей config entry — в `.storage/core.config_entries`, как и у
-  любой другой OAuth-интеграции HA. Компонент не создаёт никакого
-  собственного хранилища токенов и не хранит секреты в `configuration.yaml`.
-- Токен автоматически обновляется Home Assistant при истечении срока
-  действия (`async_ensure_token_valid`).
+- Your Google project's Client ID/Secret are registered in HA via
+  **Settings → Devices & Services → Application Credentials** — they are
+  stored in `.storage/application_credentials`.
+- After signing in with Google, the access/refresh token is saved directly
+  in the corresponding config entry — in `.storage/core.config_entries`,
+  just like any other HA OAuth integration. The component does not create
+  its own token storage and does not keep secrets in `configuration.yaml`.
+- Home Assistant automatically refreshes the token when it expires
+  (`async_ensure_token_valid`).
 
-## Установка
+## Installation
 
-### 1. Создать OAuth-клиент в Google Cloud
+### 1. Create an OAuth client in Google Cloud
 
-1. Откройте [Google API Console](https://console.cloud.google.com/apis/credentials)
-   и создайте (или выберите) проект.
-2. В [библиотеке API](https://console.cloud.google.com/apis/library) включите
-   **YouTube Data API v3**.
-3. Настройте **OAuth consent screen**:
-   - тип User type — External;
-   - добавьте scope `.../auth/youtube.readonly`;
-   - на вкладке Test users добавьте свой аккаунт Google (пока приложение не
-     опубликовано, входить смогут только тестовые пользователи).
-4. Создайте **Credentials → OAuth client ID** типа **Web application**.
-5. В **Authorized redirect URIs** добавьте:
-   - `https://my.home-assistant.io/redirect/oauth` (если используете
-     My Home Assistant), и/или
-   - `https://<ваш-внешний-url-ha>/auth/external/callback`.
-6. Сохраните **Client ID** и **Client Secret**.
+1. Open the [Google API Console](https://console.cloud.google.com/apis/credentials)
+   and create (or select) a project.
+2. In the [API library](https://console.cloud.google.com/apis/library),
+   enable **YouTube Data API v3**.
+3. Configure the **OAuth consent screen**:
+   - User type — External;
+   - add the `.../auth/youtube.readonly` scope;
+   - on the Test users tab, add your own Google account (until the app is
+     published, only test users can sign in).
+4. Create **Credentials → OAuth client ID** of type **Web application**.
+5. Under **Authorized redirect URIs**, add:
+   - `https://my.home-assistant.io/redirect/oauth` (if you use
+     My Home Assistant), and/or
+   - `https://<your-external-ha-url>/auth/external/callback`.
+6. Save the **Client ID** and **Client Secret**.
 
-### 2. Установить компонент через HACS
+### 2. Install the component via HACS
 
-1. HACS → три точки в правом верхнем углу → **Custom repositories**.
-2. Добавьте URL этого репозитория, категория — **Integration**.
-3. Найдите **YouTube Stats** в списке HACS и установите.
-4. Перезапустите Home Assistant.
+1. HACS → three dots in the top-right corner → **Custom repositories**.
+2. Add this repository's URL, category — **Integration**.
+3. Find **YouTube Stats** in the HACS list and install it.
+4. Restart Home Assistant.
 
-(Пока репозиторий не в основном каталоге HACS, добавление возможно только
-как custom repository.)
+(While the repository isn't in the default HACS catalog, it can only be
+added as a custom repository.)
 
-### 3. Настроить Application Credentials в Home Assistant
+### 3. Set up Application Credentials in Home Assistant
 
-**Настройки → Устройства и сервисы → Application Credentials → Добавить
+**Settings → Devices & Services → Application Credentials → Add
 Application Credential**:
 
-- Интеграция: **YouTube Stats**
-- Client ID / Client Secret — из шага 1.
+- Integration: **YouTube Stats**
+- Client ID / Client Secret — from step 1.
 
-### 4. Добавить интеграцию
+### 4. Add the integration
 
-**Настройки → Устройства и сервисы → Добавить интеграцию → YouTube Stats**,
-пройдите вход через Google и разрешите доступ к чтению данных YouTube.
-После этого появится устройство с названием вашего канала и сенсор
-**Latest upload**.
+**Settings → Devices & Services → Add Integration → YouTube Stats**, sign
+in with Google and grant read access to your YouTube data. A device named
+after your channel will appear, along with a **Latest upload** sensor.
 
-## Ограничения
+## Limitations
 
-- Поддерживается только собственный канал авторизованного аккаунта.
-- Различение video/Shorts — эвристика по длительности, а не официальный
-  признак API.
-- Не рекомендуется уменьшать интервал опроса намного ниже 15 минут — это
-  быстрее расходует суточную квоту YouTube Data API.
+- Only the authenticated account's own channel is supported.
+- The video/Shorts distinction is a duration-based heuristic, not an
+  official API field.
+- It's not recommended to lower the polling interval much below 15
+  minutes — that burns through the YouTube Data API's daily quota faster.
