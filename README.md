@@ -2,15 +2,25 @@
 
 A custom component (distributed via HACS as a custom repository) that uses
 the **YouTube Data API v3** and **OAuth2** to fetch data about the most
-recently published video or Short on your own channel and exposes it
-through the `sensor.<channel>_latest_upload` entity:
+recently published video or Short on your own channel and exposes it as a
+device with one sensor entity per data point:
 
-- **Title** — the sensor's state (video title)
-- **Publish date and time** — `published_at` attribute
-- **View count** — `view_count` attribute
-- **Comment count** — `comment_count` attribute
-- plus `content_type` (`video`/`short`), `like_count`, `duration_seconds`,
-  `url`, `thumbnail_url`, `description`, `video_id`
+| Entity | Description |
+| --- | --- |
+| `sensor.<channel>_title` | Video/Short title |
+| `sensor.<channel>_published_at` | Publish date and time (timestamp) |
+| `sensor.<channel>_view_count` | View count |
+| `sensor.<channel>_comment_count` | Comment count |
+| `sensor.<channel>_like_count` | Like count |
+| `sensor.<channel>_content_type` | `video` or `short` |
+| `sensor.<channel>_duration` | Duration, in seconds |
+| `sensor.<channel>_url` | Video URL *(diagnostic)* |
+| `sensor.<channel>_video_id` | Video ID *(diagnostic)* |
+| `sensor.<channel>_thumbnail_url` | Thumbnail URL *(diagnostic)* |
+| `sensor.<channel>_description` | Description, truncated to 255 chars *(diagnostic)* |
+
+All entities share one coordinator/poll, so they always refer to the same
+video and update together.
 
 The content type (`video` or `short`) is determined heuristically from the
 video's duration (≤ 3 minutes = Shorts), since the YouTube Data API does not
@@ -79,7 +89,8 @@ Application Credential**:
 
 **Settings → Devices & Services → Add Integration → YouTube Stats**, sign
 in with Google and grant read access to your YouTube data. A device named
-after your channel will appear, along with a **Latest upload** sensor.
+after your channel will appear, along with the sensor entities listed
+above.
 
 ## Limitations
 
