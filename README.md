@@ -100,6 +100,15 @@ above.
 - It's not recommended to lower the polling interval much below 15
   minutes — that burns through the YouTube Data API's daily quota faster.
 
+## Brand icon
+
+Icons and logo shown in the Home Assistant UI (Devices & Services, HACS,
+etc.) live in `custom_components/youtube_stats/brand/` (`icon.png`,
+`icon@2x.png`, `logo.png`, `logo@2x.png`). Since Home Assistant 2026.3,
+custom integrations can ship these locally — no PR against
+[home-assistant/brands](https://github.com/home-assistant/brands) is needed
+(see the [Brands Proxy API announcement](https://developers.home-assistant.io/blog/2026/02/24/brands-proxy-api)).
+
 ## Getting into the default HACS store
 
 Right now this integration can only be added as a HACS *custom repository*.
@@ -109,14 +118,11 @@ the following still needs to happen outside this repo:
 1. On GitHub, set a repository **description** and **topics** (e.g.
    `home-assistant`, `hacs`, `youtube`, `hacs-integration`) under the repo's
    "About" section.
-2. Get a brand icon merged into
-   [home-assistant/brands](https://github.com/home-assistant/brands) under
-   `custom_integrations/youtube_stats/` — HACS checks for this before
-   accepting new integration submissions.
-3. Fork [hacs/default](https://github.com/hacs/default), add
+2. Fork [hacs/default](https://github.com/hacs/default), add
    `CryInt/HASC-YouTube-Stats` to the `integration` list, and open a PR —
    it goes through automated validation and maintainer review.
 
-The `LICENSE` file and the `HACS validation`/`Hassfest validation` GitHub
-Actions workflow (`.github/workflows/validate.yml`) in this repo satisfy the
-rest of the [HACS inclusion requirements](https://hacs.xyz/docs/publish/include).
+The `LICENSE` file, the local `brand/` icons, and the `HACS
+validation`/`Hassfest validation` GitHub Actions workflow
+(`.github/workflows/validate.yml`) in this repo satisfy the rest of the
+[HACS inclusion requirements](https://hacs.xyz/docs/publish/include).
