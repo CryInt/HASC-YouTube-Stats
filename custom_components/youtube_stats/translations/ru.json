@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Выберите способ аутентификации",
+        "data": {
+          "implementation": "Способ аутентификации"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Этот канал YouTube уже настроен",
+      "already_in_progress": "Настройка уже выполняется",
+      "authorize_url_timeout": "Истекло время ожидания генерации ссылки авторизации.",
+      "missing_configuration": "Компонент не настроен. Пожалуйста, ознакомьтесь с документацией.",
+      "no_url_available": "Ссылка недоступна. Подробности в журнале Home Assistant.",
+      "oauth_error": "Получены недействительные данные авторизации.",
+      "oauth_timeout": "Истекло время ожидания авторизации.",
+      "oauth_unauthorized": "Home Assistant не авторизован для доступа к этому ресурсу.",
+      "cannot_resolve_channel": "Не удалось обратиться к YouTube Data API для определения канала.",
+      "no_channel": "Не удалось найти канал YouTube для этого аккаунта Google.",
+      "reauth_successful": "Повторная аутентификация прошла успешно",
+      "user_rejected_authorize": "Авторизация отклонена: {error}"
+    },
+    "create_entry": {
+      "default": "Аутентификация прошла успешно"
+    }
+  },
+  "application_credentials": {
+    "description": "Следуйте [инструкции по Application Credentials]({more_info_url}), чтобы настроить OAuth для YouTube Data API v3.\n\n1. Откройте [Google API Console]({oauth_creds_url}) и создайте (или выберите) проект.\n2. Включите **YouTube Data API v3**.\n3. Настройте экран согласия OAuth (External, добавьте свой аккаунт Google как тестового пользователя, добавьте scope `.../auth/youtube.readonly`).\n4. Создайте учётные данные OAuth client ID типа **Web application**.\n5. Добавьте `{redirect_url}` в качестве authorized redirect URI.\n6. Введите **Client ID** и **Client Secret** ниже."
+  }
+}

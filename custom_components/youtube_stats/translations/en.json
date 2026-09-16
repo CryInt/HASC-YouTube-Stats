@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "pick_implementation": {
+        "title": "Pick authentication method",
+        "data": {
+          "implementation": "Authentication method"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This YouTube channel is already configured",
+      "already_in_progress": "Configuration flow is already in progress",
+      "authorize_url_timeout": "Timeout generating authorize URL.",
+      "missing_configuration": "The component is not configured. Please follow the documentation.",
+      "no_url_available": "No URL available. For information about this error, check the help section.",
+      "oauth_error": "Received invalid token data.",
+      "oauth_timeout": "Timeout resolving OAuth token.",
+      "oauth_unauthorized": "Home Assistant is not authorized to access this resource.",
+      "cannot_resolve_channel": "Could not reach the YouTube Data API to resolve the channel.",
+      "no_channel": "Could not find a YouTube channel for this Google account.",
+      "reauth_successful": "Re-authentication was successful",
+      "user_rejected_authorize": "Authorization rejected: {error}"
+    },
+    "create_entry": {
+      "default": "Successfully authenticated"
+    }
+  },
+  "application_credentials": {
+    "description": "Follow the [Application Credentials instructions]({more_info_url}) to configure OAuth for the YouTube Data API v3.\n\n1. Go to the [Google API Console]({oauth_creds_url}) and create (or select) a project.\n2. Enable the **YouTube Data API v3**.\n3. Configure the OAuth consent screen (external, add your own Google account as a test user, add scope `.../auth/youtube.readonly`).\n4. Create OAuth client ID credentials of type **Web application**.\n5. Add `{redirect_url}` as an authorized redirect URI.\n6. Enter the **Client ID** and **Client Secret** below."
+  }
+}
