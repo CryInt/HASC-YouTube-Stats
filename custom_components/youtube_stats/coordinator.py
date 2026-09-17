@@ -36,4 +36,9 @@ class YouTubeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             video = await self.client.get_latest_upload()
         except YouTubeApiError as err:
             raise UpdateFailed(str(err)) from err
-        return video or {}
+        if video is None:
+            # The API can briefly report no items right after a new upload
+            # (indexing lag) even though we already have good data from a
+            # previous refresh. Keep it instead of flapping to unavailable.
+            return self.data or {}
+        return video

@@ -63,7 +63,14 @@ class YouTubeApiClient:
         return items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
     async def get_latest_upload(self) -> dict[str, Any] | None:
-        """Return normalized data about the most recently published video or short."""
+        """Return normalized data about the most recently published video or short.
+
+        The uploads playlist includes a video as soon as it's created, even
+        if it's still private or scheduled for a future publish time. Fetch
+        each candidate's own status and only consider the ones that are
+        actually public so an unpublished upload never shows up before it
+        goes live.
+        """
         playlist_id = await self._get_uploads_playlist_id()
 
         playlist_data = await self._request(
@@ -71,30 +78,36 @@ class YouTubeApiClient:
             {
                 "part": "contentDetails",
                 "playlistId": playlist_id,
-                "maxResults": 5,
+                "maxResults": 10,
             },
         )
         items = playlist_data.get("items") or []
         if not items:
             return None
 
-        # The uploads playlist is *usually* newest-first, but sort
-        # defensively by publish date so we never report a stale item.
-        items.sort(
-            key=lambda item: item.get("contentDetails", {}).get("videoPublishedAt") or "",
-            reverse=True,
-        )
-        video_id = items[0]["contentDetails"]["videoId"]
+        video_ids = [item["contentDetails"]["videoId"] for item in items]
 
         video_data = await self._request(
             "/videos",
-            {"part": "snippet,statistics,contentDetails", "id": video_id},
+            {
+                "part": "snippet,statistics,contentDetails,status",
+                "id": ",".join(video_ids),
+            },
         )
         video_items = video_data.get("items") or []
-        if not video_items:
+        published = [
+            video
+            for video in video_items
+            if video.get("status", {}).get("privacyStatus") == "public"
+        ]
+        if not published:
             return None
 
-        return self._parse_video(video_items[0])
+        published.sort(
+            key=lambda video: video.get("snippet", {}).get("publishedAt") or "",
+            reverse=True,
+        )
+        return self._parse_video(published[0])
 
     @staticmethod
     def _parse_video(video: dict[str, Any]) -> dict[str, Any]:
