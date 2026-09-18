@@ -40,5 +40,9 @@ class YouTubeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # The API can briefly report no items right after a new upload
             # (indexing lag) even though we already have good data from a
             # previous refresh. Keep it instead of flapping to unavailable.
+            if self.data:
+                _LOGGER.debug(
+                    "No public video found this refresh; keeping previous data"
+                )
             return self.data or {}
         return video

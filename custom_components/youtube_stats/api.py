@@ -14,6 +14,11 @@ _LOGGER = logging.getLogger(__name__)
 
 _DURATION_RE = re.compile(r"^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$")
 
+# Bound how many pages of the uploads playlist we'll scan for a public video,
+# so a channel with an unbounded queue of private/scheduled uploads can't
+# turn a single refresh into unbounded API calls.
+_MAX_UPLOAD_PAGES = 3
+
 
 class YouTubeApiError(Exception):
     """Raised when the YouTube Data API returns an error."""
@@ -69,45 +74,60 @@ class YouTubeApiClient:
         if it's still private or scheduled for a future publish time. Fetch
         each candidate's own status and only consider the ones that are
         actually public so an unpublished upload never shows up before it
-        goes live.
+        goes live. A channel can have more than a page worth of scheduled or
+        private uploads sitting ahead of the latest public one in the
+        playlist, so keep paging until a public video is found instead of
+        giving up after the first page.
         """
         playlist_id = await self._get_uploads_playlist_id()
 
-        playlist_data = await self._request(
-            "/playlistItems",
-            {
-                "part": "contentDetails",
-                "playlistId": playlist_id,
-                "maxResults": 10,
-            },
-        )
-        items = playlist_data.get("items") or []
-        if not items:
-            return None
+        page_token: str | None = None
+        for _ in range(_MAX_UPLOAD_PAGES):
+            playlist_data = await self._request(
+                "/playlistItems",
+                {
+                    "part": "contentDetails",
+                    "playlistId": playlist_id,
+                    "maxResults": 50,
+                    **({"pageToken": page_token} if page_token else {}),
+                },
+            )
+            items = playlist_data.get("items") or []
+            if not items:
+                return None
 
-        video_ids = [item["contentDetails"]["videoId"] for item in items]
+            video_ids = [item["contentDetails"]["videoId"] for item in items]
 
-        video_data = await self._request(
-            "/videos",
-            {
-                "part": "snippet,statistics,contentDetails,status",
-                "id": ",".join(video_ids),
-            },
-        )
-        video_items = video_data.get("items") or []
-        published = [
-            video
-            for video in video_items
-            if video.get("status", {}).get("privacyStatus") == "public"
-        ]
-        if not published:
-            return None
+            video_data = await self._request(
+                "/videos",
+                {
+                    "part": "snippet,statistics,contentDetails,status",
+                    "id": ",".join(video_ids),
+                },
+            )
+            video_items = video_data.get("items") or []
+            published = [
+                video
+                for video in video_items
+                if video.get("status", {}).get("privacyStatus") == "public"
+            ]
+            if published:
+                published.sort(
+                    key=lambda video: video.get("snippet", {}).get("publishedAt") or "",
+                    reverse=True,
+                )
+                return self._parse_video(published[0])
 
-        published.sort(
-            key=lambda video: video.get("snippet", {}).get("publishedAt") or "",
-            reverse=True,
+            page_token = playlist_data.get("nextPageToken")
+            if not page_token:
+                return None
+
+        _LOGGER.warning(
+            "No public video found in the first %d uploads; the channel may have "
+            "an unusually long queue of private or scheduled videos",
+            _MAX_UPLOAD_PAGES * 50,
         )
-        return self._parse_video(published[0])
+        return None
 
     @staticmethod
     def _parse_video(video: dict[str, Any]) -> dict[str, Any]:
